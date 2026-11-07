@@ -1409,6 +1409,11 @@ public sealed class ReactorChatLayoutProofTests(UIThreadFixture ui)
                 && VisualTreeHelper.GetParent(container) is ItemsRepeater repeater
                 && repeater.GetElementIndex(container) >= 0);
 
+    private static IEnumerable<ItemContainer> RealizedTimelineContainers(DependencyObject root) =>
+        FindDescendants<ItemContainer>(Assert.Single(FindDescendants<ItemsView>(root)))
+            .Where(container => VisualTreeHelper.GetParent(container) is ItemsRepeater repeater
+                && repeater.GetElementIndex(container) >= 0);
+
     [Fact]
     public async Task ProductionRoot_RevealsHostLayerAndUsesCardComposerFill()
     {
@@ -1700,6 +1705,65 @@ public sealed class ReactorChatLayoutProofTests(UIThreadFixture ui)
             });
             if (start == 5 && length == 0)
                 await CaptureAsync(surface, "Composer-keyboard-enter-sent");
+        }, interactiveKeyboard: true);
+    }
+
+    [Fact]
+    public async Task TranscriptRows_NameEachMessageOnItsFocusableContainer()
+    {
+        await WithChatAsync(800, async (surface, host, _, _) =>
+        {
+            await ui.RunOnUIAsync(() =>
+            {
+                var containers = RealizedTimelineContainers(host).ToList();
+                Assert.True(containers.Count >= 2);
+                foreach (var container in containers)
+                {
+                    var name = AutomationProperties.GetName(container);
+                    Assert.False(string.IsNullOrWhiteSpace(name));
+                    Assert.True(container.IsTabStop);
+                    Assert.DoesNotContain(
+                        FindDescendants<FrameworkElement>(container),
+                        element => AutomationProperties.GetName(element) == name);
+                }
+
+                Assert.Contains(containers, container =>
+                    AutomationProperties.GetName(container).Contains(UserMessage, StringComparison.Ordinal));
+                Assert.Contains(containers, container =>
+                    AutomationProperties.GetName(container).Contains(AssistantMessage, StringComparison.Ordinal));
+            });
+            await CaptureAsync(surface, "Transcript-message-containers");
+        });
+    }
+
+    [NativeKeyboardTheory]
+    [Trait("Category", "NativeKeyboard")]
+    [InlineData(800)]
+    public async Task TranscriptRows_ArrowKeysMoveFocusBetweenMessages(int width)
+    {
+        await WithChatAsync(width, async (_, host, _, _) =>
+        {
+            nint window = 0;
+            await ui.RunOnUIAsync(() => window = WinRT.Interop.WindowNative.GetWindowHandle(_captureWindow!));
+            await NativeKeyboardProof.ActivateAsync(window);
+            var containers = await ui.RunOnUIAsync(() => Task.FromResult(
+                RealizedTimelineContainers(host).Where(container => container.IsTabStop).ToList()));
+            Assert.True(containers.Count >= 2);
+
+            await ui.RunOnUIAsync(() => Assert.True(containers[0].Focus(FocusState.Keyboard)));
+            await SettleAsync();
+            await ui.RunOnUIAsync(() =>
+            {
+                Assert.Same(containers[0], FocusManager.GetFocusedElement(containers[0].XamlRoot));
+                NativeKeyboardProof.Press(window, global::Windows.System.VirtualKey.Down);
+            });
+            await SettleAsync();
+            await ui.RunOnUIAsync(() =>
+                Assert.Same(containers[1], FocusManager.GetFocusedElement(containers[0].XamlRoot)));
+            await ui.RunOnUIAsync(() => NativeKeyboardProof.Press(window, global::Windows.System.VirtualKey.Up));
+            await SettleAsync();
+            await ui.RunOnUIAsync(() =>
+                Assert.Same(containers[0], FocusManager.GetFocusedElement(containers[0].XamlRoot)));
         }, interactiveKeyboard: true);
     }
 

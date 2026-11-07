@@ -20,6 +20,7 @@ namespace OpenClawTray.Chat;
 internal static class ToolCallCardRenderer
 {
     private const int ToolDetailMaxChars = 4000;
+    private const int ToolHintMaxChars = 120;
 
     private static readonly ConditionalWeakTable<Expander, ActivityExpanderBinding>
         s_activityBindings = new();
@@ -27,7 +28,9 @@ internal static class ToolCallCardRenderer
     public static Element BuildStandalone(
         ChatTimelinePresentationContext props,
         ChatTimelineItem entry,
-        bool isNested = false)
+        bool isNested = false,
+        int position = 0,
+        int total = 0)
     {
         var details = new List<Element>();
         var displayArgs = entry.ToolArgs is { Count: > 0 }
@@ -63,6 +66,18 @@ internal static class ToolCallCardRenderer
             ? LocalizedOrDefault("Chat_Tool_FooterLabel", "Tool")
             : entry.ToolName;
         var statusLabel = StatusLabel(entry.ToolResult);
+        var automationName = $"{LocalizedOrDefault("Chat_Tool_CallLabel", "Tool call")} {toolName}. {statusLabel}.";
+        if (total > 1 && position > 0)
+        {
+            automationName += " " + string.Format(
+                LocalizedOrDefault("Chat_Tool_CallPositionFormat", "{0} of {1}"),
+                position,
+                total) + ".";
+        }
+        var inputHint = FirstLine(displayArgs, entry.Text);
+        if (!string.IsNullOrWhiteSpace(inputHint))
+            automationName += " " + inputHint;
+
         var expander = Expander(
                 $"{toolName} · {statusLabel}",
                 Border(VStack(6, details.ToArray()))
@@ -70,8 +85,7 @@ internal static class ToolCallCardRenderer
             .HAlign(HorizontalAlignment.Stretch)
             .HorizontalContentAlignment(HorizontalAlignment.Stretch)
             .AutomationId($"ChatToolCall_{SanitizeAutomationId(entry.Id)}")
-            .AutomationName(
-                $"{LocalizedOrDefault("Chat_Tool_CallLabel", "Tool call")} {toolName}. {statusLabel}.")
+            .AutomationName(automationName)
             .WithKey($"tool-expander:{entry.Id}:collapse:{props.ToolCallsCollapseVersion}");
 
         if (isNested)
@@ -147,6 +161,28 @@ internal static class ToolCallCardRenderer
             : display[..ToolDetailMaxChars] + "\n\u2026(truncated)";
     }
 
+    private static string FirstLine(params string?[] values)
+    {
+        foreach (var value in values)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
+
+            foreach (var rawLine in value.Split('\n'))
+            {
+                var line = rawLine.Trim();
+                if (line.Length == 0)
+                    continue;
+
+                return line.Length <= ToolHintMaxChars
+                    ? line
+                    : line[..ToolHintMaxChars] + "\u2026";
+            }
+        }
+
+        return string.Empty;
+    }
+
     public static Element BuildActivity(
         ChatTimelinePresentationContext props,
         ChatToolActivityRow activity,
@@ -178,7 +214,12 @@ internal static class ToolCallCardRenderer
             ? VStack(
                 0,
                 activity.Tools
-                    .Select(tool => BuildStandalone(props, tool, isNested: true)
+                    .Select((tool, index) => BuildStandalone(
+                            props,
+                            tool,
+                            isNested: true,
+                            position: index + 1,
+                            total: activity.Tools.Count)
                         .WithKey($"activity-tool:{tool.Id}"))
                     .ToArray())
             : Empty();

@@ -29,7 +29,7 @@ public sealed class ReactorChatMarkdownContractTests
         Assert.Contains("Paragraph = ChatMarkdownPresentation.Paragraph", timeline, StringComparison.Ordinal);
         Assert.Contains("CodeBlock = (code, language) => ChatMarkdownPresentation.CodeBlock(code, language, tryCopy: tryCopy)", timeline, StringComparison.Ordinal);
         Assert.Contains(
-            "BuildAccessibleAssistantText(entry.Text, metadata?.AssistantContent)",
+            "BuildAccessibleAssistantText(entry.Text, AssistantMetadata(row, entry)?.AssistantContent)",
             timeline,
             StringComparison.Ordinal);
     }

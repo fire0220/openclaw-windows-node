@@ -7932,4 +7932,10 @@ After enrolling, return to Settings &gt; Windows Update and check for updates. I
   <data name="GatewayVoice_TimedOut" xml:space="preserve"><value>Gateway speech timed out. Synthesis may have completed. Check the Gateway before trying again; no automatic retry was made.</value></data>
   <data name="GatewayVoice_SynthesisFailed" xml:space="preserve"><value>Gateway speech failed. Check its voice configuration and provider quota. No local fallback or automatic retry was made.</value></data>
   <data name="GatewayVoice_PlaybackFailed" xml:space="preserve"><value>Windows could not play the speech audio. Check your output device. No automatic retry was made.</value></data>
+  <data name="Chat_Timeline_UserSenderLabel" xml:space="preserve">
+    <value>You</value>
+  </data>
+  <data name="Chat_Tool_CallPositionFormat" xml:space="preserve">
+    <value>{0} of {1}</value>
+  </data>
 </root>

@@ -1261,4 +1261,46 @@ public sealed class ChatTimelinePresentationTests
         Assert.DoesNotContain("ReactorChatComposer.IsHighContrast", timeline);
         Assert.Contains(".AutomationName(presentation.AutomationName)", timeline);
     }
+
+    [Fact]
+    public void ReactorTimeline_NamesMessageContainersAndSupportsArrowNavigation()
+    {
+        var timeline = File.ReadAllText(Path.Combine(
+            TestRepositoryPaths.GetRepositoryRoot(),
+            "src",
+            "OpenClaw.Tray.WinUI",
+            "Chat",
+            "ReactorChatTimeline.cs"));
+
+        Assert.Contains("(row, _) => BuildItemContainer(row)", timeline);
+        Assert.Contains("var name = MessageRowAutomationName(row);", timeline);
+        Assert.Contains(".IsTabStop(!string.IsNullOrEmpty(name))", timeline);
+        Assert.Contains(".OnKeyDown(MoveBetweenMessageRows)", timeline);
+        Assert.Contains("return string.IsNullOrEmpty(name) ? container : container.AutomationName(name);", timeline);
+        Assert.Contains("\"Chat_Timeline_UserSenderLabel\"", timeline);
+        Assert.Contains("VirtualKey.Up", timeline);
+        Assert.Contains("GetOrCreateElement(index)", timeline);
+        Assert.Contains("Focus(FocusState.Keyboard)", timeline);
+        Assert.DoesNotContain(".IsTabStop(false)", timeline);
+        Assert.DoesNotContain("BuildAccessibleAssistantText(entry.Text, metadata?.AssistantContent)", timeline);
+    }
+
+    [Fact]
+    public void ReactorTimeline_ToolCallCardsAnnouncePositionAndInputHint()
+    {
+        var renderer = File.ReadAllText(Path.Combine(
+            TestRepositoryPaths.GetRepositoryRoot(),
+            "src",
+            "OpenClaw.Tray.WinUI",
+            "Chat",
+            "ToolCallCardRenderer.cs"));
+
+        Assert.Contains("int position = 0", renderer);
+        Assert.Contains("int total = 0", renderer);
+        Assert.Contains("\"Chat_Tool_CallPositionFormat\"", renderer);
+        Assert.Contains("FirstLine(displayArgs, entry.Text)", renderer);
+        Assert.Contains("position: index + 1", renderer);
+        Assert.Contains("total: activity.Tools.Count", renderer);
+        Assert.Contains("private const int ToolHintMaxChars = 120;", renderer);
+    }
 }

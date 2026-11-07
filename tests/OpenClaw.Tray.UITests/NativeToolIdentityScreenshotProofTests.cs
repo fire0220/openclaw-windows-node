@@ -150,10 +150,10 @@ public sealed class NativeToolIdentityScreenshotProofTests
 
     private void ExpandTool(string automationName, ICollection<string> proof)
     {
-        var element = WaitForElement(new PropertyCondition(
-            AutomationElement.NameProperty,
-            automationName));
-        Expand(element, automationName, proof);
+        var element = WaitForElement(
+            element => element.Current.Name.StartsWith(automationName, StringComparison.Ordinal),
+            automationName);
+        Expand(element, element.Current.Name, proof);
     }
 
     private static void Expand(
@@ -308,9 +308,10 @@ public sealed class HistoryCollisionScreenshotProofTests
         }
 
         var bash = WaitForElement(
-            new PropertyCondition(
-                AutomationElement.NameProperty,
-                "Tool call Bash. Done."));
+            element => element.Current.Name.StartsWith(
+                "Tool call Bash. Done.",
+                StringComparison.Ordinal),
+            "history collision Bash tool row to appear");
         Assert.True(
             bash.TryGetCurrentPattern(
                 ExpandCollapsePattern.Pattern,
