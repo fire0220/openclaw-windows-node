@@ -455,11 +455,15 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
                 row.Props.Timeline,
                 activity,
                 toolActivityExpansionState,
-                entry => BuildEntry(
-                    ReactorTimelineRow.FromEntry(row.Props, entry, false, default),
-                    entry, speakingEntryId, hoveredEntryKey, focusedEntryKey, toggleSpeechAsync,
-                    setEntryHovered, setFocusedEntryKey,
-                    includeAvatar: false),
+                entry =>
+                {
+                    var workRow = ReactorTimelineRow.FromEntry(row.Props, entry, false, default);
+                    var element = BuildEntry(
+                        workRow, entry, speakingEntryId, hoveredEntryKey, focusedEntryKey, toggleSpeechAsync,
+                        setEntryHovered, setFocusedEntryKey, includeAvatar: false);
+                    var name = ContainerAutomationName(workRow);
+                    return name.Length == 0 ? element : element.AutomationName(name);
+                },
                 animateEntrance: animateWorkEntrance),
         _ when row.Entry is { } entry => BuildEntry(
             row,
@@ -860,8 +864,9 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
         var attachments = EntryMetadata(row, entry)?.Attachments is { Count: > 0 } structured
             ? structured
             : legacyAttachments;
+        var speaker = LocalizedOrDefault("Chat_Timeline_UserSenderLabel", "You");
         return WithMessageTimestamp(
-            BuildAccessibleUserText(messageText, attachments), MessageTimestamp(row, entry));
+            $"{speaker}: {BuildAccessibleUserText(messageText, attachments)}", MessageTimestamp(row, entry));
     }
 
     private static ChatEntryMetadata? EntryMetadata(ReactorTimelineRow row, ChatTimelineItem entry) =>
@@ -920,19 +925,46 @@ public sealed class ReactorChatTimeline : Component<ReactorChatTimelineProps>
 
     /// <summary>
     /// Removes markdown syntax from an accessible name while keeping every literal the user can
-    /// read, including fenced code bodies, underscores and comparison characters.
+    /// read: fenced and inline code keep their exact text (only the delimiters go), and prose
+    /// markers such as <c>__init__</c> or <c>[x](y)</c> stay literal unless they are real markdown.
     /// </summary>
     private static string SanitizeMarkdownForAutomationName(string text)
     {
+        var spans = new System.Text.RegularExpressions.Regex(
+            @"```[A-Za-z0-9_+.\-]*[ \t]*\r?\n?([\s\S]*?)```|`([^`\r\n]+)`");
+        var builder = new System.Text.StringBuilder(text.Length);
+        var last = 0;
+        foreach (System.Text.RegularExpressions.Match span in spans.Matches(text))
+        {
+            if (span.Index > last)
+                builder.Append(SanitizeMarkdownProse(text[last..span.Index]));
+            builder.Append(span.Groups[1].Success ? span.Groups[1].Value : span.Groups[2].Value);
+            last = span.Index + span.Length;
+        }
+
+        builder.Append(SanitizeMarkdownProse(text[last..]));
+        return builder.ToString().Trim();
+    }
+
+    private static string SanitizeMarkdownProse(string segment)
+    {
         var result = System.Text.RegularExpressions.Regex.Replace(
-            text, @"```[A-Za-z0-9_+.\-]*[ \t]*\r?\n?", string.Empty);
-        result = System.Text.RegularExpressions.Regex.Replace(result, @"`([^`]+)`", "$1");
-        result = System.Text.RegularExpressions.Regex.Replace(result, @"!\[([^\]]*)\]\([^)]*\)", "$1");
-        result = System.Text.RegularExpressions.Regex.Replace(result, @"\[([^\]]+)\]\([^)]*\)", "$1");
+            segment, @"!?\[([^\]]*)\]\(([^)]*)\)",
+            match => IsAbsoluteLink(match.Groups[2].Value) ? match.Groups[1].Value : match.Value);
         result = System.Text.RegularExpressions.Regex.Replace(
             result, @"^[ \t]{0,3}#{1,6}[ \t]+", string.Empty,
             System.Text.RegularExpressions.RegexOptions.Multiline);
-        return System.Text.RegularExpressions.Regex.Replace(result, @"(\*\*|__)(?=\S)(.+?)(?<=\S)\1", "$2");
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"\*\*(?=\S)(.+?)(?<=\S)\*\*", "$1");
+        return System.Text.RegularExpressions.Regex.Replace(
+            result, @"__(?=\S)([^\n_]*\s[^\n_]*?)(?<=\S)__", "$1");
+    }
+
+    private static bool IsAbsoluteLink(string target)
+    {
+        var value = target.Trim();
+        return value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildAccessibleAssistantText(

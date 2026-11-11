@@ -2470,7 +2470,7 @@ public sealed partial class ReactorChatLayoutProofTests(UIThreadFixture ui)
                 var assistant = new ChatTimelineItem(
                     "a11y-assistant",
                     ChatTimelineItemKind.Assistant,
-                    "排期如下：\n```text\n09:00  Focus time\n```\n以及 snake_case 和 a<b。");
+                    "排期如下：\n```text\n09:00  Focus time\n```\n以及 `__init__`、`[x](y)`、snake_case 和 a<b。");
                 var metadata = new Dictionary<string, ChatEntryMetadata>
                 {
                     [user.Id] = new(new DateTimeOffset(2026, 11, 10, 10, 47, 0, localOffset), null),
@@ -2497,9 +2497,10 @@ public sealed partial class ReactorChatLayoutProofTests(UIThreadFixture ui)
 
                 var userContainer = Assert.Single(containers, container =>
                     AutomationProperties.GetName(container)
-                        .StartsWith("早上好, ", StringComparison.Ordinal));
+                        .StartsWith(LocalizationHelper.GetString("Chat_Timeline_UserSenderLabel") + ": ", StringComparison.Ordinal));
                 Assert.True(userContainer.IsTabStop);
                 var userName = AutomationProperties.GetName(userContainer);
+                Assert.Contains("早上好", userName, StringComparison.Ordinal);
                 Assert.Contains("10:47", userName, StringComparison.Ordinal);
                 // The container is the only carrier of the name, so a focused row announces once.
                 Assert.DoesNotContain(
@@ -2512,6 +2513,8 @@ public sealed partial class ReactorChatLayoutProofTests(UIThreadFixture ui)
                 Assert.True(assistantContainer.IsTabStop);
                 var assistantName = AutomationProperties.GetName(assistantContainer);
                 Assert.Contains("09:00  Focus time", assistantName, StringComparison.Ordinal);
+                Assert.Contains("__init__", assistantName, StringComparison.Ordinal);
+                Assert.Contains("[x](y)", assistantName, StringComparison.Ordinal);
                 Assert.Contains("snake_case", assistantName, StringComparison.Ordinal);
                 Assert.Contains("a<b", assistantName, StringComparison.Ordinal);
                 Assert.DoesNotContain("code block", assistantName, StringComparison.Ordinal);
