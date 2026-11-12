@@ -2862,6 +2862,12 @@ Use uma destas opções:
   <data name="Chat_Tool_CallLabel" xml:space="preserve">
     <value>Chamada de ferramenta</value>
   </data>
+  <data name="Chat_Tool_CallPositionFormat" xml:space="preserve">
+    <value>{0} de {1}</value>
+  </data>
+  <data name="Chat_Timeline_UserSenderLabel" xml:space="preserve">
+    <value>Você</value>
+  </data>
   <data name="Chat_Tool_OutputLabel" xml:space="preserve">
     <value>Saída da ferramenta</value>
   </data>

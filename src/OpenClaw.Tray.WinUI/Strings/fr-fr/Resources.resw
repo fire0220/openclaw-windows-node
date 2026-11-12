@@ -2843,6 +2843,12 @@ Utilisez l'une de ces options :
   <data name="Chat_Tool_CallLabel" xml:space="preserve">
     <value>Appel d'outil</value>
   </data>
+  <data name="Chat_Tool_CallPositionFormat" xml:space="preserve">
+    <value>{0} sur {1}</value>
+  </data>
+  <data name="Chat_Timeline_UserSenderLabel" xml:space="preserve">
+    <value>Vous</value>
+  </data>
   <data name="Chat_Tool_OutputLabel" xml:space="preserve">
     <value>Sortie d'outil</value>
   </data>

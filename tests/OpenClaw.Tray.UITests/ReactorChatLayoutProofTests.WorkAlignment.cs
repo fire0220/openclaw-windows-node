@@ -281,6 +281,36 @@ public sealed partial class ReactorChatLayoutProofTests
         }, initialThreadId: key, renderProvider: provider);
     }
 
+    [Fact]
+    public async Task WorkedCommentary_RowAnnouncesItsSpeakerAndText()
+    {
+        const string key = "agent:main:dashboard:worknames";
+        var provider = new ProofProvider();
+        provider.Publish(WorkSnapshot(await provider.LoadAsync(), key, ExpandedWorkEntries(), active: false));
+        await WithChatAsync(480, async (surface, _, session, _) =>
+        {
+            await ui.RunOnUIAsync(() =>
+            {
+                session.ViewModel.SetDraft("");
+                Assert.Single(FindDescendants<Expander>(surface)).IsExpanded = true;
+            });
+            await SettleAsync();
+            await ui.RunOnUIAsync(() => Assert.Single(FindDescendants<Expander>(surface),
+                expander => !expander.IsExpanded).IsExpanded = true);
+            await SettleAsync();
+            await AwaitDisclosureAnimationsAsync(surface);
+
+            await ui.RunOnUIAsync(() =>
+            {
+                var prose = Assert.Single(FindDescendants<RichTextBlock>(surface), text => CollectText(text) == WorkCommentary);
+                var named = Ancestors(prose).OfType<FrameworkElement>()
+                    .First(element => AutomationProperties.GetName(element).Length > 0);
+                var name = AutomationProperties.GetName(named);
+                Assert.Contains(WorkCommentary, name, StringComparison.Ordinal);
+            });
+        }, initialThreadId: key, renderProvider: provider);
+    }
+
     [Theory]
     [InlineData("Light")]
     [InlineData("Dark")]

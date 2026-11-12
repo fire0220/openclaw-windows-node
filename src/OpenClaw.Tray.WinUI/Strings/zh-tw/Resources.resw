@@ -2843,6 +2843,12 @@
   <data name="Chat_Tool_CallLabel" xml:space="preserve">
     <value>工具呼叫</value>
   </data>
+  <data name="Chat_Tool_CallPositionFormat" xml:space="preserve">
+    <value>第 {0} 個，共 {1} 個</value>
+  </data>
+  <data name="Chat_Timeline_UserSenderLabel" xml:space="preserve">
+    <value>你</value>
+  </data>
   <data name="Chat_Tool_OutputLabel" xml:space="preserve">
     <value>工具輸出</value>
   </data>

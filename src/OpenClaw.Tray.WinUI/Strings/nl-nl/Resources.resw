@@ -2844,6 +2844,12 @@ Gebruik een van deze opties:
   <data name="Chat_Tool_CallLabel" xml:space="preserve">
     <value>Hulpmiddelaanroep</value>
   </data>
+  <data name="Chat_Tool_CallPositionFormat" xml:space="preserve">
+    <value>{0} van {1}</value>
+  </data>
+  <data name="Chat_Timeline_UserSenderLabel" xml:space="preserve">
+    <value>Jij</value>
+  </data>
   <data name="Chat_Tool_OutputLabel" xml:space="preserve">
     <value>Hulpmiddeluitvoer</value>
   </data>
